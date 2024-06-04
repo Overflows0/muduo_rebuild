@@ -1,20 +1,31 @@
 #include "vector"
 #include "functional"
 
-#include "Channel.h"
-#include "Poller.h"
+#include "CurrentThread.h"
 
-class EventLoop : noncopyable
+class EventLoop
 {
 public:
     EventLoop();
     ~EventLoop();
 
     void loop();
-    void stop();
-    void updateChannel(Channel *channel_);
-    void removeChannel(Channel *channel_);
+    void quit();
+
+    EventLoop *getEventLoopOfCurrentThread();
+
+    void assertInLoopThread()
+    {
+        if (!isInLoopThread())
+        {
+            abortNotInThread();
+        }
+    }
+
+    bool isInLoopThread() const { return CurrentThread::tid() == threadId_; }
 
 private:
-    Channel *channel_;
+    void abortNotInThread();
+    bool looping_;
+    const pid_t threadId_;
 };
