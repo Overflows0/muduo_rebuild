@@ -1,4 +1,4 @@
-
+#pragma once
 
 class noncopyable
 {
@@ -6,7 +6,7 @@ public:
     noncopyable(const noncopyable &) = delete;
     void operator=(const noncopyable &) = delete;
 
-private:
+protected:
     noncopyable() = default;
     ~noncopyable() = default;
 };
