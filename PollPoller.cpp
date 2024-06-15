@@ -21,12 +21,12 @@ Timestamp PollPoller::poll(int timeoutMs, ChannelList *activeChannels)
     Timestamp now(Timestamp::now());
     if (numEvents > 0)
     {
-        LOG_INFO("numEvents happended");
+        LOG_DEBUG("%d Events happended", numEvents);
         fillActiveChannels(numEvents, activeChannels);
     }
     else if (numEvents == 0)
     {
-        LOG_INFO("Nothing happended");
+        LOG_DEBUG("Nothing happended");
     }
     else
     {

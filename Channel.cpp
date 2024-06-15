@@ -21,13 +21,11 @@ Channel::~Channel()
 {
 }
 
-// 通过EventLoop间接调用Poller来修改Channel
 void Channel::update()
 {
     loop_->updateChannel(this);
 }
 
-// 调用handleEvent()对特定的活跃描述符检查每一个poll事件，然后执行回调或报错
 void Channel::handleEvent()
 {
     if (revents_ & POLLNVAL)
