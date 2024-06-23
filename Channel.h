@@ -64,6 +64,12 @@ public:
     {
         errorCallback_ = cb;
     }
+    void setCloseCallback(const EventCallback &cb)
+    {
+        closeCallback_ = cb;
+    }
+
+    void remove();
 
 private:
     void update(); // 通过EventLoop间接调用Poller来修改Channel
@@ -77,8 +83,10 @@ private:
     int events_;
     int revents_;
     int index_;
+    bool eventHandling_;
 
     EventCallback readCallback_;
     EventCallback writeCallback_;
     EventCallback errorCallback_;
+    EventCallback closeCallback_;
 };

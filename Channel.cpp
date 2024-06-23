@@ -1,4 +1,5 @@
 #include "poll.h"
+#include "assert.h"
 
 #include "EventLoop.h"
 #include "Channel.h"
@@ -19,6 +20,12 @@ Channel::Channel(EventLoop *loop, int fd)
 
 Channel::~Channel()
 {
+    assert(!eventHandling_);
+}
+
+void Channel::remove()
+{
+    loop_->removeChannel(this);
 }
 
 void Channel::update()
@@ -28,6 +35,7 @@ void Channel::update()
 
 void Channel::handleEvent()
 {
+    eventHandling_ = true;
     if (revents_ & POLLNVAL)
     {
         LOG_ERROR("Channel::handelEvent() POLLNAVAL");
@@ -36,6 +44,11 @@ void Channel::handleEvent()
     {
         if (errorCallback_)
             errorCallback_();
+    }
+    if ((revents_ & POLLHUP) && !(revents_ & POLLIN))
+    {
+        if (closeCallback_)
+            closeCallback_();
     }
     if (revents_ & (POLLIN | POLLPRI | POLLHUP))
     {
@@ -47,4 +60,5 @@ void Channel::handleEvent()
         if (writeCallback_)
             writeCallback_();
     }
+    eventHandling_ = false;
 }

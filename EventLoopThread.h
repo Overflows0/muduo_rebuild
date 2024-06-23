@@ -12,7 +12,7 @@
  * 同时用户又需要得到对象地址，
  * 因此一个函数(threadFunc)来循环，一个函数(startLoop)返回对象地址
  */
-class EventLoopThread : public noncopyable
+class EventLoopThread : noncopyable
 {
 public:
     EventLoopThread();

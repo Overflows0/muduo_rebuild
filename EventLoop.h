@@ -14,7 +14,7 @@ class Channel;
 class Poller;
 class TimerId;
 
-class EventLoop
+class EventLoop : noncopyable
 {
 public:
     using Functor = std::function<void()>;

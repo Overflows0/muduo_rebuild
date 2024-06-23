@@ -8,7 +8,7 @@
  * -Timer是对到期时间和回调函数的封装；
  * -提供定期执行的功能；
  */
-class Timer : public noncopyable
+class Timer : noncopyable
 {
 public:
     Timer(Timestamp when, const TimerCallback &cb, double interval)
