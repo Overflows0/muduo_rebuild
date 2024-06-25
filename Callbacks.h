@@ -2,12 +2,14 @@
 #include <memory>
 
 class TcpConnection;
+class Buffer;
+class Timestamp;
 
 // 提供全局的回调声明
 using TimerCallback = std::function<void()>;
 using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 using ConnectionCallback = std::function<void(const TcpConnectionPtr &)>;
 using MessageCallback = std::function<void(const TcpConnectionPtr &,
-                                           const char *data,
-                                           ssize_t len)>;
+                                           Buffer *buf,
+                                           Timestamp)>;
 using CloseCallback = std::function<void(const TcpConnectionPtr &)>;

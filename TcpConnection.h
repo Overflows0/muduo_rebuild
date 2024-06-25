@@ -6,6 +6,7 @@
 
 #include "Callbacks.h"
 #include "InetAddress.h"
+#include "Buffer.h"
 #include "noncopyable.h"
 
 class Channel;
@@ -41,6 +42,12 @@ public:
     const InetAddress &localAddress() { return localAddr_; }
     const InetAddress &peerAddress() { return peerAddr_; }
 
+    /* 先一次性发送完数据，如果还有剩余数据，就注册写事件，等待套接字可写 */
+    void send(const void *message, size_t len);
+    void send(const std::string &message);
+    /* 对套接字半关闭，关闭写方向 */
+    void shutdown();
+
     // 开启TcpConnection对socket的监听读事件，并执行用户级连接回调
     void connEstablished();
     // 通知用户关闭连接，关闭对socket的监听，并移除对应的channel
@@ -49,15 +56,18 @@ public:
 private:
     enum StateE // 进行特定操作时需要有特定连接状态的必要条件
     {
-        kConnecting,   // 未连接，接下来准备连接
-        kConnected,    // 已连接
-        kDisconnected, // 关闭连接
+        kConnecting,    // 未连接，接下来准备连接
+        kConnected,     // 已连接
+        kDisconnecting, // 半关闭连接状态，保留对套接字的读事件
+        kDisconnected,  // 关闭连接
     };
 
-    void handleRead();
+    void handleRead(Timestamp receiveTime);
     void handleWrite();
-    void handleClose(); // 关闭对socket的监听，并执行关闭回调(TcpServer::removeConnection)
-    void handleError(); // 若遇到error，利用SO_ERROR套接字选项获取error值
+    void handleClose();                          // 关闭对socket的监听，并执行关闭回调(TcpServer::removeConnection)
+    void handleError();                          // 若遇到error，利用SO_ERROR套接字选项获取error值
+    void sendInLoop(const std::string &message); // 保证线程安全
+    void shutdownInLoop();                       // 保证线程安全
 
     void setState(StateE s) { state_ = s; }
 
@@ -71,4 +81,6 @@ private:
     ConnectionCallback connCb_;
     MessageCallback messaCb_;
     CloseCallback closeCb_;
+    Buffer inputBuffer_;  /* 输入缓冲区，从套接字到内核 */
+    Buffer outputBuffer_; /* 输出缓冲区，从内核到套接字 */
 };

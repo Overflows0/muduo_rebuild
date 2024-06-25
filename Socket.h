@@ -21,6 +21,7 @@ public:
     void bindAddress(const InetAddress &address);
     void listen();
     int accept(InetAddress *peerAddress);
+    static void shutdownWrite(int sockfd);
     static void close(int sockfd);
     static struct sockaddr_in getLocalAddr(int sockfd);
     static int getSocketError(int sockfd);

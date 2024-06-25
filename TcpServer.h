@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <string>
 
+#include "TcpConnection.h"
 #include "EventLoop.h"
 #include "Callbacks.h"
 #include "noncopyable.h"

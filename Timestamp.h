@@ -18,6 +18,7 @@ public:
     ~Timestamp();
 
     std::string toString() const;
+    std::string toFormattedString() const;
     static Timestamp now();
     static Timestamp invalid() { return Timestamp(); }
     bool isValid() { return microSecondsSinceEpoch_ > 0; }

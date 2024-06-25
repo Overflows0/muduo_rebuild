@@ -15,13 +15,14 @@ class Channel : noncopyable
 {
 public:
     using EventCallback = std::function<void()>;
+    using ReadEventCallback = std::function<void(Timestamp)>;
     Channel(EventLoop *loop, int fd);
     ~Channel();
 
     int fd() { return fd_; }
     int events() { return events_; }
     void set_revents(int rev) { revents_ = rev; } // 供poller调用，设置实际事件
-    bool isNoneEvents() { return revents_ == kNonEvent; }
+    bool isNoneEvents() { return events_ == kNonEvent; }
 
     void enableReading()
     {
@@ -43,6 +44,7 @@ public:
         events_ = kNonEvent;
         update();
     }
+    bool isWriting() { return events_ & kWriteEvent; }
 
     /* 标记自己在poller监听数组中的索引 */
     int index() { return index_; }
@@ -50,9 +52,9 @@ public:
 
     EventLoop *ownerLoop() { return loop_; }
 
-    void handleEvent(); // 调用handleEvent()对特定的活跃描述符检查每一个poll事件，然后执行回调
+    void handleEvent(Timestamp receiveTime); // 调用handleEvent()对特定的活跃描述符检查每一个poll事件，然后执行回调
 
-    void setReadCallback(const EventCallback &cb)
+    void setReadCallback(const ReadEventCallback &cb)
     {
         readCallback_ = cb;
     }
@@ -85,7 +87,7 @@ private:
     int index_;
     bool eventHandling_;
 
-    EventCallback readCallback_;
+    ReadEventCallback readCallback_;
     EventCallback writeCallback_;
     EventCallback errorCallback_;
     EventCallback closeCallback_;

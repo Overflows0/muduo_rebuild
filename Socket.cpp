@@ -69,6 +69,14 @@ int Socket::accept(InetAddress *peerAddress)
     return connfd;
 }
 
+void Socket::shutdownWrite(int sockfd)
+{
+    if (::shutdown(sockfd, SHUT_WR) < 0)
+    {
+        LOG_DEBUG("Socket::shutdown");
+    }
+}
+
 void Socket::close(int sockfd)
 {
     if (::close(sockfd))
