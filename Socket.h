@@ -18,13 +18,18 @@ public:
     ~Socket();
 
     int fd() const { return sockfd_; }
-    void bindAddress(const InetAddress &address);
-    void listen();
-    int accept(InetAddress *peerAddress);
+    void bindAddress(const InetAddress &address); // 封装bind()
+    void listen();                                // 封装listen()
+    int accept(InetAddress *peerAddress);         // 封装accept()并处理一些异常情况
+
+    /* 剩下的静态函数是不必由独立对象调用，通过fd直接调用即可 */
+    static int createNonblocking(); // 封装socket()创建非阻塞描述符
     static void shutdownWrite(int sockfd);
     static void close(int sockfd);
     static struct sockaddr_in getLocalAddr(int sockfd);
+    static struct sockaddr_in getPeerAddr(int sockfd);
     static int getSocketError(int sockfd);
+    static bool isSelfConnection(int sockfd);
 
     void setTcpNoDelay(bool on);
     void setReuseAddr(bool on);

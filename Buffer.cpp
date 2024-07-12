@@ -1,11 +1,12 @@
+#include <sys/uio.h>
+
 #include "Buffer.h"
-#include "sys/uio.h"
 
 ssize_t Buffer::readFd(int fd, int *savedErrno)
 {
     char extrabuf[65536]; // 栈上开辟空间实现分散读
     struct iovec vec[2];
-    const size_t writable = writableBtyes();
+    const size_t writable = writableBytes();
     vec[0].iov_base = buffer_.data() + writeIndex_;
     vec[0].iov_len = writable;
     vec[1].iov_base = extrabuf;
@@ -29,20 +30,20 @@ ssize_t Buffer::readFd(int fd, int *savedErrno)
 
 void Buffer::makeSpace(size_t len)
 {
-    if (len + kCheapPrepend > writableBtyes() + prependableBtyes())
+    if (len + kCheapPrepend > writableBytes() + prependableBytes())
     {
-        buffer_.resize(writableBtyes() + len);
+        buffer_.resize(writableBytes() + len);
     }
     /* 如果原缓冲区的空闲空间足够储存，就挪移待发送数据 */
     else
     {
         assert(kCheapPrepend < readIndex_);
-        size_t readable = readableBtyes();
+        size_t readable = readableBytes();
         std::copy(buffer_.data() + readIndex_,
                   buffer_.data() + writeIndex_,
                   buffer_.data() + kCheapPrepend);
         readIndex_ = kCheapPrepend;
         writeIndex_ = readIndex_ + readable;
-        assert(readable == readableBtyes());
+        assert(readable == readableBytes());
     }
 }

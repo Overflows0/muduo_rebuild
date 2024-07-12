@@ -18,17 +18,20 @@ public:
 
     ~TimerQueue();
 
-    /* 任何线程都可以调用addTimer，但真正把Timer加入队列的只有原IO线程 */
+    /* 任何线程都可以调用addTimer，非线程安全，但真正把Timer加入队列的只有原IO线程 */
     TimerId addTimer(Timestamp timestamp, const TimerCallback &cb, double interval);
-    // void cancel(TimerId timerId);
+    void cancel(TimerId timerId);
 
 private:
     using Entry = std::pair<Timestamp, Timer *>;
     using TimerList = std::set<Entry>;
+    using ActiveTimer = std::pair<Timer *, int64_t>;
+    using ActiveTimerSet = std::set<ActiveTimer>;
 
     /* 加入的Timer如果到期时间比第一个早，就重新调整timerfd,优先调用该Timer */
     void addTimerInLoop(Timer *timer);
 
+    void cancelInLoop(TimerId timerId);
     /* timerfd在满足到期时间后就处理读事件 */
     void handleRead();
 
@@ -46,10 +49,14 @@ private:
     EventLoop *loop_;
     const int timerfd_;
     Channel timerChannel_;
+    bool callingExpiredTimers_;
 
     /* 用set来排序优先到期的定时器，
      * 通过时间戳获取Timer指针-> pair<Timestamp,Timer*>,
      * 用pair作为元素是因为Timerstamp有可能相同，而相同Timerstamp的pair的地址却不同
      */
     TimerList timers_;
+    /* 用以注销或激活定时器的集合,容器保存的都是有效指针 */
+    ActiveTimerSet activeTimers_;
+    ActiveTimerSet cancelingTimers_;
 };

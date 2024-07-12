@@ -1,10 +1,11 @@
-#include "assert.h"
+#include <assert.h>
 
 #include "TcpConnection.h"
 #include "EventLoop.h"
 #include "Socket.h"
 #include "Channel.h"
 #include "Logger.h"
+#include "TimerId.h"
 
 TcpConnection::TcpConnection(EventLoop *loop, std::string name, int sockfd, const InetAddress &localAddr, const InetAddress &peerAddr)
     : loop_(loop),
@@ -52,6 +53,36 @@ void TcpConnection::shutdown()
         setState(kDisconnecting);
         loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, this));
     }
+}
+
+void TcpConnection::forceClose()
+{
+    if (state_ == kConnected || state_ == kDisconnecting)
+    {
+        setState(kDisconnecting);
+        loop_->queueInLoop(std::bind(
+            &TcpConnection::forceCloseInLoop, this));
+    }
+}
+
+void TcpConnection::forceCloseWithDelay(double seconds)
+{
+    if (state_ == kConnected || state_ == kDisconnecting)
+    {
+        setState(kDisconnecting);
+        loop_->runAfter(seconds,
+                        std::bind(&TcpConnection::forceClose, this));
+    }
+}
+
+void TcpConnection::setTcpNoDelay(bool on)
+{
+    socket_->setTcpNoDelay(on);
+}
+
+void TcpConnection::setKeepAlive(bool on)
+{
+    socket_->setKeepAlive(on);
 }
 
 void TcpConnection::connEstablished()
@@ -106,14 +137,19 @@ void TcpConnection::handleWrite()
     {
         ssize_t n = ::write(channel_->fd(),
                             outputBuffer_.peek(),
-                            outputBuffer_.readableBtyes());
+                            outputBuffer_.readableBytes());
         if (n > 0)
         {
             outputBuffer_.retrieve(n);
             /* 如果输出缓冲区全部发送完毕就关闭写监听 */
-            if (outputBuffer_.readableBtyes() == 0)
+            if (outputBuffer_.readableBytes() == 0)
             {
                 channel_->disableWriting();
+                if (wriComCb_)
+                {
+                    loop_->queueInLoop(
+                        std::bind(wriComCb_, shared_from_this()));
+                }
                 /* 如果连接处于半关闭状态就开始关闭对套接字的写方向 */
                 if (state_ == kDisconnecting)
                     shutdownInLoop();
@@ -139,7 +175,7 @@ void TcpConnection::handleClose()
     loop_->assertInLoopThread();
     assert(state_ == kConnected || state_ == kDisconnecting);
     channel_->disableAll();
-    closeCb_(shared_from_this()); //<-TcpServer::removeConnection
+    closeCb_(shared_from_this()); //<-TcpServer::removeConnection(对TcpConnection::connDestroyed的封装)
 }
 
 void TcpConnection::handleError()
@@ -152,8 +188,8 @@ void TcpConnection::sendInLoop(const std::string &message)
 {
     loop_->assertInLoopThread();
     ssize_t n = 0;
-    /* 先将数据直接发送到套接字中，条件是套接字没有正在写，缓冲区为空 */
-    if (!channel_->isWriting() && outputBuffer_.readableBtyes() == 0)
+    /* 先将数据直接发送到套接字中，条件是套接字没有正在写，缓冲区为空（防止原数据和新数据发送乱序） */
+    if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0)
     {
         n = ::write(channel_->fd(), message.data(), message.size());
         if (n < 0)
@@ -167,6 +203,11 @@ void TcpConnection::sendInLoop(const std::string &message)
             if (static_cast<size_t>(n) < message.size())
             {
                 LOG_DEBUG("I am going to write more data");
+            }
+            else if (wriComCb_)
+            {
+                loop_->queueInLoop(
+                    std::bind(wriComCb_, shared_from_this()));
             }
         }
     }
@@ -192,5 +233,15 @@ void TcpConnection::shutdownInLoop()
     if (!channel_->isWriting())
     {
         Socket::shutdownWrite(channel_->fd()); // 半关闭写入
+    }
+}
+
+void TcpConnection::forceCloseInLoop()
+{
+    loop_->assertInLoopThread();
+
+    if (state_ == kConnected || state_ == kDisconnecting)
+    {
+        handleClose();
     }
 }

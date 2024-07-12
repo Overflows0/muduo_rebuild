@@ -1,5 +1,5 @@
-#include "poll.h"
-#include "assert.h"
+#include <poll.h>
+#include <assert.h>
 
 #include "EventLoop.h"
 #include "Channel.h"
@@ -14,7 +14,9 @@ Channel::Channel(EventLoop *loop, int fd)
       fd_(fd),
       events_(0),
       revents_(0),
-      index_(-1)
+      index_(-1),
+      tied_(false),
+      eventHandling_(false)
 {
 }
 
@@ -23,9 +25,33 @@ Channel::~Channel()
     assert(!eventHandling_);
 }
 
+void Channel::tie(const std::shared_ptr<void> &obj)
+{
+    tied_ = true;
+    tie_ = obj;
+}
+
 void Channel::remove()
 {
     loop_->removeChannel(this);
+}
+
+void Channel::handleEvent(Timestamp receiveTime)
+{
+    std::shared_ptr<void> guard;
+    if (tied_)
+    {
+        guard = tie_.lock();
+        /* 确保关闭连接时正在handleEvent的Channel不会因为析构而意外中断 */
+        if (guard)
+        {
+            handleEventWithGuard(receiveTime);
+        }
+    }
+    else
+    {
+        handleEventWithGuard(receiveTime);
+    }
 }
 
 void Channel::update()
@@ -33,7 +59,7 @@ void Channel::update()
     loop_->updateChannel(this);
 }
 
-void Channel::handleEvent(Timestamp receiveTime)
+void Channel::handleEventWithGuard(Timestamp receiveTime)
 {
     eventHandling_ = true;
     if (revents_ & POLLNVAL)

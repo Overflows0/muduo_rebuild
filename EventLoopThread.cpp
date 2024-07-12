@@ -1,6 +1,7 @@
+#include <stdio.h>
+#include <assert.h>
+
 #include "EventLoopThread.h"
-#include "stdio.h"
-#include "assert.h"
 
 EventLoopThread::EventLoopThread()
     : loop_(nullptr),
@@ -14,14 +15,17 @@ EventLoopThread::EventLoopThread()
 EventLoopThread::~EventLoopThread()
 {
     exiting_ = true;
-    loop_->quit();
-    thread_.join();
+    if (loop_ != NULL)
+    {
+        loop_->quit();
+        thread_.join();
+    }
 }
 
 EventLoop *EventLoopThread::startLoop()
 {
     assert(!thread_.started);
-    thread_.start();
+    thread_.start(); // 从这里创建新线程
 
     if (loop_ == nullptr)
     {

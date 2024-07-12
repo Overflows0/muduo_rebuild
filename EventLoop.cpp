@@ -1,8 +1,9 @@
 #include <vector>
 #include <functional>
 #include <mutex>
-#include "assert.h"
-#include "sys/eventfd.h"
+#include <signal.h>
+#include <assert.h>
+#include <sys/eventfd.h>
 
 #include "EventLoop.h"
 #include "Poller.h"
@@ -24,6 +25,16 @@ static int createEventFd()
     }
     return fd;
 }
+
+class IgnoreSigPipe
+{
+public:
+    IgnoreSigPipe()
+    {
+        ::signal(SIGPIPE, SIG_IGN);
+    }
+};
+IgnoreSigPipe object;
 
 EventLoop::EventLoop()
     : looping_(false),
@@ -140,6 +151,11 @@ TimerId EventLoop::runEvery(double interval, const TimerCallback &cb)
 {
     Timestamp time(addTime(Timestamp::now(), interval));
     return timerQueue_->addTimer(time, cb, interval);
+}
+
+void EventLoop::cancel(TimerId timerId)
+{
+    timerQueue_->cancel(timerId);
 }
 
 void EventLoop::wakeup()

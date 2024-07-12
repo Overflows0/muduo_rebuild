@@ -1,8 +1,9 @@
-#include "sys/time.h"
-#include "inttypes.h"
+#include <sys/time.h>
+#include <inttypes.h>
 
 #include "Timestamp.h"
 
+//无参数构造函数构造无效定时器
 Timestamp::Timestamp()
     : microSecondsSinceEpoch_(0) {}
 

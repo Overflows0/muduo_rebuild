@@ -1,4 +1,5 @@
 #pragma once
+#include "stdint.h"
 
 class Timer;
 
@@ -9,11 +10,15 @@ class Timer;
 class TimerId
 {
 public:
-    explicit TimerId(Timer *timer)
-        : value_(timer)
+    TimerId(Timer *timer = nullptr, int64_t seq = 0)
+        : timer_(timer),
+          sequence_(seq) 
     {
     }
 
+    friend class TimerQueue;
+
 private:
-    Timer *value_;
+    Timer *timer_; //Timer指针可以被不同对象所共享持有
+    int64_t sequence_;  //单个指针不足以区分定时器（可以被共享），序列号区分不同的持有者下的定时器编号，该变量具有原子性
 };

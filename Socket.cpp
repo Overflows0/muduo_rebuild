@@ -1,6 +1,6 @@
-#include "unistd.h"
-#include "sys/socket.h"
-#include "netinet/tcp.h"
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
 
 #include "Socket.h"
 #include "InetAddress.h"
@@ -9,6 +9,18 @@
 Socket::~Socket()
 {
     Socket::close(sockfd_);
+}
+
+int Socket::createNonblocking()
+{
+    int sockfd = ::socket(AF_INET,
+                          SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,
+                          IPPROTO_TCP);
+    if (sockfd < 0)
+    {
+        LOG_ERROR("socket() failed");
+    }
+    return sockfd;
 }
 
 void Socket::bindAddress(const InetAddress &address)
@@ -95,6 +107,25 @@ sockaddr_in Socket::getLocalAddr(int sockfd)
         LOG_ERROR("Socket::getLocalAddr");
     }
     return localAddr;
+}
+
+sockaddr_in Socket::getPeerAddr(int sockfd)
+{
+    struct sockaddr_in peerAddr;
+    socklen_t len = sizeof(peerAddr);
+    memset(&peerAddr, 0, sizeof(peerAddr));
+    if (::getpeername(sockfd, (sockaddr *)&peerAddr, &len) < 0)
+    {
+        LOG_ERROR("Socket::getPeerAddr");
+    }
+    return peerAddr;
+}
+
+bool Socket::isSelfConnection(int sockfd)
+{
+    struct sockaddr_in localAddr = Socket::getLocalAddr(sockfd);
+    struct sockaddr_in peerAddr = Socket::getPeerAddr(sockfd);
+    return localAddr.sin_addr.s_addr == peerAddr.sin_addr.s_addr && localAddr.sin_port == peerAddr.sin_port;
 }
 
 int Socket::getSocketError(int sockfd)

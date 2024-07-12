@@ -19,7 +19,7 @@ public:
 
     void listen();
     bool listenning() { return listenning_; }
-    void setNewConnectionCallback(const NewConnectionCallback &cb) { cb_ = cb; } // 设置连接回调
+    void setNewConnectionCallback(const NewConnectionCallback &cb) { cb_ = std::move(cb); } // 设置连接回调
 
 private:
     void handleRead(); // 一旦有连接到达，就调用accept()建立连接，并调用连接回调

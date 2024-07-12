@@ -57,6 +57,7 @@ public:
     TimerId runAt(const Timestamp &time, const TimerCallback &cb);
     TimerId runAfter(double delay, const TimerCallback &cb);
     TimerId runEvery(double interval, const TimerCallback &cb);
+    void cancel(TimerId timerId);
 
     void wakeup(); // 任何其他线程都能唤醒该EventLoop
 

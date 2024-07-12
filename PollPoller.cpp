@@ -1,5 +1,5 @@
-#include "assert.h"
-#include "poll.h"
+#include <assert.h>
+#include <poll.h>
 
 #include "PollPoller.h"
 #include "Logger.h"
@@ -109,6 +109,7 @@ void PollPoller::fillActiveChannels(int numEvents, ChannelList *activeChannels) 
 {
     for (PollfdList::const_iterator pfd = pollfds_.begin(); pfd != pollfds_.end() && numEvents > 0; pfd++)
     {
+        /* 文件描述符的revents不为0便是活跃的 */
         if (pfd->revents > 0)
         {
             numEvents--;

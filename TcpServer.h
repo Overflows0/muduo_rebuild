@@ -5,12 +5,12 @@
 #include <unordered_map>
 #include <string>
 
-#include "TcpConnection.h"
-#include "EventLoop.h"
+#include "EventLoopThreadPool.h"
 #include "Callbacks.h"
 #include "noncopyable.h"
 
 class Acceptor;
+class EventLoop;
 class InetAddress;
 class TcpConnection;
 
@@ -23,13 +23,17 @@ public:
 
     void setConnectionCallback(const ConnectionCallback &cb)
     {
-        connCb_ = cb;
+        connCb_ = std::move(cb);
     }
     void setMessageCallback(const MessageCallback &cb)
     {
-        messaCb_ = cb;
+        messaCb_ = std::move(cb);
     }
-
+    void setWriteCompleteCallback(const WriteCompleteCallback &cb)
+    {
+        wriComCb_ = std::move(cb);
+    }
+    void setThreadNum(int threadNum) { threadPool_->setThreadNum(threadNum); }
     void start(); // 服务器初始化连接监听连接请求的到来
 
 private:
@@ -37,15 +41,18 @@ private:
     void newConnection(int sockfd, const InetAddress &peerAddr);
     /* 移除对connection的记录，延后移除Channel(延后是因为有可能还有剩下的IO事务未处理) */
     void removeConnection(const TcpConnectionPtr &conn);
+    void removeConnectionInLoop(const TcpConnectionPtr &conn);
 
     using ConnectionMap = std::unordered_map<std::string, TcpConnectionPtr>;
 
     EventLoop *loop_; // TcpServer持有loop_，但不决定loop的生死
+    std::unique_ptr<EventLoopThreadPool> threadPool_;
     const std::string name_;
     bool started_;
     std::unique_ptr<Acceptor> acceptor_; // 只有TcpServer才能持有acceptor
     ConnectionCallback connCb_;
     MessageCallback messaCb_;
+    WriteCompleteCallback wriComCb_;
     int nextConnId_;
     ConnectionMap connections_; // 记录TcpConnection，以便检索来管理TcpConnection生命期
 };

@@ -1,10 +1,11 @@
 #pragma once
 
-#include "functional"
+#include <functional>
 
 #include "noncopyable.h"
 
 class EventLoop;
+class Timestamp;
 
 /*
  * -用Channel对象封装文件描述符，一对一；
@@ -19,10 +20,11 @@ public:
     Channel(EventLoop *loop, int fd);
     ~Channel();
 
+    void tie(const std::shared_ptr<void> &obj);
     int fd() { return fd_; }
     int events() { return events_; }
-    void set_revents(int rev) { revents_ = rev; } // 供poller调用，设置实际事件
-    bool isNoneEvents() { return events_ == kNonEvent; }
+    void set_revents(int rev) { revents_ = rev; }        // 供poller调用，设置实际事件
+    bool isNoneEvents() { return events_ == kNonEvent; } // 告诉Poller忽略对该事件的监视
 
     void enableReading()
     {
@@ -44,7 +46,8 @@ public:
         events_ = kNonEvent;
         update();
     }
-    bool isWriting() { return events_ & kWriteEvent; }
+    bool isWriting() const { return events_ & kWriteEvent; }
+    bool isReading() const { return events_ & kReadEvent; }
 
     /* 标记自己在poller监听数组中的索引 */
     int index() { return index_; }
@@ -56,25 +59,26 @@ public:
 
     void setReadCallback(const ReadEventCallback &cb)
     {
-        readCallback_ = cb;
+        readCallback_ = std::move(cb);
     }
     void setWriteCallback(const EventCallback &cb)
     {
-        writeCallback_ = cb;
+        writeCallback_ = std::move(cb);
     }
     void setErrorCallback(const EventCallback &cb)
     {
-        errorCallback_ = cb;
+        errorCallback_ = std::move(cb);
     }
     void setCloseCallback(const EventCallback &cb)
     {
-        closeCallback_ = cb;
+        closeCallback_ = std::move(cb);
     }
 
     void remove();
 
 private:
     void update(); // 通过EventLoop间接调用Poller来修改Channel
+    void handleEventWithGuard(Timestamp receiveTime);
 
     static const int kNonEvent;
     static const int kReadEvent;
@@ -86,6 +90,8 @@ private:
     int revents_;
     int index_;
     bool eventHandling_;
+    bool tied_;
+    std::weak_ptr<void> tie_;
 
     ReadEventCallback readCallback_;
     EventCallback writeCallback_;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "assert.h"
+#include <assert.h>
 
 #include "Poller.h"
 
@@ -19,5 +19,7 @@ public:
     void removeChannel(Channel *channel) override;
 
 private:
+    using PollfdList = std::vector<pollfd>;
     void fillActiveChannels(int numEvents, ChannelList *activeChannels) const;
+    PollfdList pollfds_;
 };

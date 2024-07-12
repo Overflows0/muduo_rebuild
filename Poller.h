@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <unordered_map>
-#include "poll.h"
+#include <poll.h>
 
 #include "EventLoop.h"
 #include "noncopyable.h"
@@ -12,6 +12,7 @@ class Timestamp;
 
 // 该类是事件分发器的基类，为I/O多路复用核心模块保留统一的接口
 // 由PollPoller和EpollPoller继承
+// 默认调用EpollPoller
 class Poller : noncopyable
 {
 public:
@@ -30,9 +31,14 @@ public:
 
 protected:
     using ChannelMap = std::unordered_map<int, Channel *>;
-    using PollfdList = std::vector<pollfd>;
-    ChannelMap channels_;
-    PollfdList pollfds_;
+
+    /**
+     *  对于channels_,
+     *  在EpollPoller仅仅用来断言确认Channel和fd的存在和对应关系
+     *  在PollPoller中方便寻找活跃fd和Channel，因为Poll会返回所有描述符，需要自己查找
+    */
+    ChannelMap channels_; 
+
 
 private:
     EventLoop *ownerLoop_;

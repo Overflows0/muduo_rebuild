@@ -1,7 +1,8 @@
+#pragma once
 #include <vector>
 #include <string>
-#include "assert.h"
-#include "sys/types.h"
+#include <assert.h>
+#include <sys/types.h>
 
 // buffer的数据结构本质是vector<char>，目的是为了能随时动态调整空间大小
 // buffer_的布局如下
@@ -33,14 +34,14 @@ public:
           readIndex_(kCheapPrepend),
           writeIndex_(kCheapPrepend)
     {
-        assert(readableBtyes() == 0);
-        assert(writableBtyes() == kInitialSize);
-        assert(prependableBtyes() == kCheapPrepend);
+        assert(readableBytes() == 0);
+        assert(writableBytes() == kInitialSize);
+        assert(prependableBytes() == kCheapPrepend);
     }
 
-    size_t readableBtyes() const { return writeIndex_ - readIndex_; }
-    size_t writableBtyes() const { return buffer_.size() - writeIndex_; }
-    size_t prependableBtyes() const { return readIndex_; }
+    size_t readableBytes() const { return writeIndex_ - readIndex_; }
+    size_t writableBytes() const { return buffer_.size() - writeIndex_; }
+    size_t prependableBytes() const { return readIndex_; }
     /* 读取缓冲区待发送数据的起始位置 */
     const char *peek() const { return buffer_.data() + readIndex_; }
 
@@ -53,11 +54,11 @@ public:
     /* 确保缓冲区有足够空间填充数据，否则就扩增vector空间至刚好适配数据大小 */
     void ensureWritable(size_t len)
     {
-        if (writableBtyes() < len)
+        if (writableBytes() < len)
         {
             makeSpace(len);
         }
-        assert(writableBtyes() >= len);
+        assert(writableBytes() >= len);
     }
 
     /* 填充数据时调用该函数 */
@@ -83,7 +84,7 @@ public:
     /* 发送完数据后调用该函数调整readIndex_位置 */
     void retrieve(size_t len)
     {
-        assert(len <= readableBtyes());
+        assert(len <= readableBytes());
         readIndex_ += len;
     }
 
@@ -95,7 +96,7 @@ public:
     /* 一次性发送所有数据 */
     std::string retrieveAsString()
     {
-        std::string str(peek(), readableBtyes());
+        std::string str(peek(), readableBytes());
         retrieveAll();
         return str;
     }
@@ -103,7 +104,7 @@ public:
     /* 将数据prepend到缓冲区前面空闲的空间 */
     void prepend(const void *data, size_t len)
     {
-        assert(len <= prependableBtyes());
+        assert(len <= prependableBytes());
         readIndex_ -= len;
         const char *char_data = static_cast<const char *>(data);
         std::copy(char_data, char_data + len, buffer_.data() + readIndex_);
@@ -112,8 +113,8 @@ public:
     /* 调整缓冲区大小 */
     void shrink(size_t reserve)
     {
-        std::vector<char> new_buffer(kCheapPrepend + readableBtyes() + reserve);
-        std::copy(peek(), peek() + readableBtyes(), new_buffer.data() + kCheapPrepend);
+        std::vector<char> new_buffer(kCheapPrepend + readableBytes() + reserve);
+        std::copy(peek(), peek() + readableBytes(), new_buffer.data() + kCheapPrepend);
         buffer_.swap(new_buffer);
     }
 
