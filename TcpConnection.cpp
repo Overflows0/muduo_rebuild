@@ -175,7 +175,7 @@ void TcpConnection::handleClose()
     loop_->assertInLoopThread();
     assert(state_ == kConnected || state_ == kDisconnecting);
     channel_->disableAll();
-    closeCb_(shared_from_this()); //<-TcpServer::removeConnection(对TcpConnection::connDestroyed的封装)
+    closeCb_(shared_from_this()); //<-TcpServer::removeConnection(对TcpConnection::connDestroyed的封装) - 析构本TcpConnection对象
 }
 
 void TcpConnection::handleError()
