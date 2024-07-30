@@ -55,13 +55,15 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
 
     LOG_INFO("TcpServer::newConnection[%s] new connection[%s] from %s", name_.c_str(), name.c_str(), peerAddr.toIpPort().c_str());
     InetAddress localAddr(Socket::getLocalAddr(sockfd));
+
+    /* 创建TcpConnection并做一些注册回调的准备工作 */
     TcpConnectionPtr conn = std::make_shared<TcpConnection>(ioLoop, name, sockfd, localAddr, peerAddr);
     connections_[name] = conn;
-
     conn->setConnectionCallback(connCb_);
     conn->setMessageCallback(messaCb_);
     conn->setWriteCompleteCallback(wriComCb_);
     conn->setCloseCallback(std::bind(&TcpServer::removeConnection, this, std::placeholders::_1));
+
     /* 交给子线程去建立TcpConnection */
     ioLoop->runInLoop(std::bind(&TcpConnection::connEstablished, conn));
 }

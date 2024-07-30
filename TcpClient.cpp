@@ -3,6 +3,7 @@
 #include "TcpConnection.h"
 #include "InetAddress.h"
 #include "TcpClient.h"
+#include "Socket.h"
 #include "EventLoop.h"
 
 using namespace std::placeholders;

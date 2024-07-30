@@ -20,10 +20,10 @@ ssize_t Buffer::readFd(int fd, int *savedErrno)
     {
         writeIndex_ += n;
     }
-    else
+    else // 超出buffer空间，用vec缓存
     {
         writeIndex_ = buffer_.size();
-        append(extrabuf, n - writable); // 此时已经完成IO事务，就可以做开辟空间的工作
+        append(extrabuf, n - writable); // 此时已经完成IO事务（接收全部消息，但缓存在栈上），就可以做开辟buffer空间的工作
     }
     return n;
 }

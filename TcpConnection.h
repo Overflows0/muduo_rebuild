@@ -54,10 +54,12 @@ public:
     /* 先一次性发送完数据，如果还有剩余数据，就注册写事件，等待套接字可写 */
     void send(const void *message, size_t len);
     void send(const std::string &message);
+    void send(Buffer *buffer);
     /* 对套接字半关闭，关闭写方向 */
     void shutdown();
+    /* 服务器主动关闭连接 */
     void forceClose();
-    void forceCloseWithDelay(double seconds);
+    void forceCloseWithDelay(double seconds); // 延后关闭连接
 
     void setTcpNoDelay(bool on);
     void setKeepAlive(bool on);
@@ -82,7 +84,7 @@ private:
     void handleError();                          // 若遇到error，利用SO_ERROR套接字选项获取error值
     void sendInLoop(const std::string &message); // 保证线程安全
     void shutdownInLoop();                       // 保证线程安全
-    void forceCloseInLoop();                     //
+    void forceCloseInLoop();                     // 在IO线程里关闭连接，保证线程安全
 
     void setState(StateE s)
     {

@@ -31,6 +31,24 @@ void TcpConnection::send(const void *message, size_t len)
     send(std::string(static_cast<const char *>(message), len));
 }
 
+void TcpConnection::send(Buffer *buffer)
+{
+    if (state_ == kConnected)
+    {
+        if (loop_->isInLoopThread())
+        {
+            sendInLoop(buffer->retrieveAsString());
+        }
+        else
+        {
+            loop_->runInLoop(std::bind(
+                &TcpConnection::sendInLoop,
+                this,
+                buffer->retrieveAsString()));
+        }
+    }
+}
+
 void TcpConnection::send(const std::string &message)
 {
     if (state_ == kConnected)
