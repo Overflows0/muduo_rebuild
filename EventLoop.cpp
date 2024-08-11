@@ -15,6 +15,7 @@
 const int kPollTimeMs = 10000;
 __thread EventLoop *t_loopInthisThread = 0;
 
+/* 用于唤醒阻塞在poller上的线程来处理回调函数 */
 static int createEventFd()
 {
     int fd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -26,6 +27,7 @@ static int createEventFd()
     return fd;
 }
 
+/* 避免进程遇到SIGPIPE信号而意外关闭，最简单的方法是忽略它 */
 class IgnoreSigPipe
 {
 public:

@@ -1,4 +1,4 @@
-#include "muduo_rebuild/Codec.h"
+#include "Codec.h"
 #include "muduo_rebuild/TcpServer.h"
 #include "muduo_rebuild/EventLoop.h"
 #include "muduo_rebuild/TcpConnection.h"
@@ -22,6 +22,10 @@ public:
     void start()
     {
         server_.start();
+    }
+    void setThreadNum(int num)
+    {
+        server_.setThreadNum(num);
     }
 
 private:
@@ -59,17 +63,22 @@ private:
 int main(int argc, char *argv[])
 {
     printf("pid = %d\n", getpid());
-    if (argc > 1)
+    if (argc > 2)
     {
         EventLoop loop;
         uint16_t port = static_cast<uint16_t>(atoi(argv[1]));
         InetAddress listenAddr(port);
         ChatServer server(&loop, listenAddr);
+        server.setThreadNum(atoi(argv[2]));
         server.start();
         loop.loop();
     }
+    else if (argc > 1)
+    {
+        printf("Usage: %s %s threads of number\n", argv[0], argv[1]);
+    }
     else
     {
-        printf("Usage: %s port\n", argv[0]);
+        printf("Usage: %s port threads of number\n", argv[0]);
     }
 }

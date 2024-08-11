@@ -8,6 +8,7 @@
 #include "Timestamp.h"
 #include "Logger.h"
 
+/* 解决TCP粘包问题 - 在消息头部编码或解析消息长度 */
 class LengthHeaderCodec : noncopyable
 {
 public:
