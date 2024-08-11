@@ -20,8 +20,6 @@
 * 回调函数队列为多个Eventloop的共享变量，采用swap()方式减少了锁的范围；
 * 通过shared_pointer指针来管理处理IO事务的对象生命期，避免读写数据时异常中断连接；
 
-***
-
 ## 安装使用
 
 在项目文件夹当前目录下make，会生成测试用例ChatClient和ChatServer，其中Server需要指定端口号和线程参数，Client要指定端口号
